@@ -3,7 +3,6 @@ from time import sleep
 from turtle import title
 from urllib.request import urlopen
 from utils.util import *
-
 import mss.tools
 import pygetwindowmp as pygetwindow
 import schedule
@@ -409,7 +408,7 @@ def get_default_input_output(powershell=True):
             default_input = "No Default Output Device"
             print("No Default Device Set")
         try:
-            default_output = sd.query_devices(device=default_devices[0])['name']
+            default_output = sd.query_devices(device=default_devices[1])['name']
         except sd.PortAudioError as err:
             print("No Default Device Set")
             default_output = "No Default Input Device"
@@ -513,15 +512,22 @@ def onStart(data):
     try:
         github_check = TouchPortalAPI.Tools.updateCheck("KillerBOSS2019", "WinTools")
         plugin_version = str(data['pluginVersion'])
-        plugin_version = plugin_version[:1] + "." + plugin_version[1:]
-        if github_check[1:4] != plugin_version[0:3]:
+        if github_check.replace('v','').replace(".","") != plugin_version:
+            
+            ### Pulling Patch Notes for Notification
+            r = requests.get("https://api.github.com/repos/KillerBOSS2019/WinTools/contents/patchnotes.txt?ref=main")
+            base64_bytes = r.json()['content'].encode('ascii')
+            message_bytes = base64.b64decode(base64_bytes)
+            message = message_bytes.decode('ascii')
+            
+            
             TPClient.showNotification(
                     notificationId="KillerBOSS.TP.Plugins.Update_Check",
-                    title=f"WinTools v{github_check[1:4]} is available",
-                    msg="A new Wintools Version is available and ready to Download. This may include Bug Fixes and or New Features",
+                    title=f"WinTools {github_check} is available",
+                    msg="A new version of Wintools is available and ready to Download. This may include Bug Fixes and or New Features",
                     options= [{
                     "id":"Download Update",
-                    "title":"Click here to Update"
+                    "title":f"Patch Notes\n{message}\n Click to Update!"
                     }])
     except:
         print("Something went wrong checking update")
@@ -787,7 +793,8 @@ def Actions(data):
         
     if data['actionId'] == "KillerBOSS.TP.Plugins.winsettings.rotate_display":
         if data['data'][0]['value'] != "Pick a Monitor":
-            rotate_display(int(data['data'][0]['value']), data['data'][1]['value'])
+            print("yello?")
+            rotate_display2(data['data'][0]['value'], data['data'][1]['value'])
         
         
     if data['actionId'] == "KillerBOSS.TP.Plugins.winsettings.shutdown":
