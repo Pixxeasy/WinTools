@@ -986,9 +986,13 @@ def AudioDeviceCmdlets(command, output=True):
     systemencoding= f"cp{systemencoding}"
     process = subprocess.Popen(["powershell", "-Command", "Import-Module .\AudioDeviceCmdlets.dll;", command],stdout=subprocess.PIPE, shell=True, encoding=systemencoding)
     proc_stdout = process.communicate()[0]
+
     if output:
-        proc_stdout = proc_stdout[proc_stdout.index("["):-1]
-        return json.loads(proc_stdout) 
+        if proc_stdout[0] == "[":
+            proc_stdout = proc_stdout[proc_stdout.index("["):-1]
+            return json.loads(proc_stdout) 
+        else:
+            return proc_stdout.strip()
 
 
 
