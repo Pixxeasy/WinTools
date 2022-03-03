@@ -5,7 +5,7 @@ from urllib.request import urlopen
 from utils.util import *
 
 import mss.tools
-import pygetwindowmp as pygetwindow
+import pygetwindow
 import schedule
 import TouchPortalAPI
 from TouchPortalAPI import TYPES, Tools
@@ -396,37 +396,33 @@ def screenshot_monitor(monitor_number, filename="", clipboard = False):
             
 prev_input = ""
 prev_output = ""
-def get_default_input_output(powershell=True):
+def get_default_input_output():
     global prev_input, prev_output
-    """Getting Default Audio From SD instead of Powershell - Less CPU usage?"""
-    if not powershell:
-        sd._terminate()
-        sd._initialize()
-        default_devices = sd.default.device
-        try:
-            default_input = sd.query_devices(device=default_devices[0])['name']
-        except sd.PortAudioError as err:
-            default_input = "No Default Output Device"
-            print("No Default Device Set")
-        try:
-            default_output = sd.query_devices(device=default_devices[0])['name']
-        except sd.PortAudioError as err:
-            print("No Default Device Set")
-            default_output = "No Default Input Device"
-        ## Input
-        if prev_input != default_input:
-            print("Updated default Input")
-            TPClient.stateUpdate("KillerBOSS.TP.Plugins.state.default_inputputdevice", "True")
-            TPClient.stateUpdate('KillerBOSS.TP.Plugins.Sound.CurrentInputDevice', str(default_input))
-            TPClient.stateUpdate("KillerBOSS.TP.Plugins.state.default_inputputdevice", "False")
-            prev_input = default_input
-        ## Output
-        if prev_output != default_output:
-            print("Updated default Output")
-            TPClient.stateUpdate("KillerBOSS.TP.Plugins.state.default_outputdevice", "True")
-            TPClient.stateUpdate('KillerBOSS.TP.Plugins.Sound.CurrentOutputDevice', str(default_output))
-            TPClient.stateUpdate("KillerBOSS.TP.Plugins.state.default_outputdevice", "False")
-            prev_output = default_output
+
+    default_input = AudioDeviceCmdlets('(Get-AudioDevice -Recording).Name')
+    default_output = AudioDeviceCmdlets('(Get-AudioDevice -Playback).Name')
+
+    if not default_input:
+        default_input = "No Default Input Device"
+        print("No Default Input Device Set")
+    if not default_output:
+        default_output = "No Default Output device"
+        print("No Default Output Device Set")
+  
+     ## Input
+    if prev_input != default_input:
+        print("Updated default Input")
+        TPClient.stateUpdate("KillerBOSS.TP.Plugins.state.default_inputputdevice", "True")
+        TPClient.stateUpdate('KillerBOSS.TP.Plugins.Sound.CurrentInputDevice', str(default_input))
+        TPClient.stateUpdate("KillerBOSS.TP.Plugins.state.default_inputputdevice", "False")
+        prev_input = default_input
+    ## Output
+    if prev_output != default_output:
+        print("Updated default Output")
+        TPClient.stateUpdate("KillerBOSS.TP.Plugins.state.default_outputdevice", "True")
+        TPClient.stateUpdate('KillerBOSS.TP.Plugins.Sound.CurrentOutputDevice', str(default_output))
+        TPClient.stateUpdate("KillerBOSS.TP.Plugins.state.default_outputdevice", "False")
+        prev_output = default_output
 
 """Imported from Util.py instead"""
 #TPClient = TouchPortalAPI.Client('Windows-Tools')
@@ -529,7 +525,7 @@ def onStart(data):
     
     """Updating Monitor/VD's and Audio Details for Choices"""
     check_number_of_monitors()
-    get_default_input_output(powershell=False)
+    get_default_input_output()
     vd_check()
     
     """ Getting Powerplans and Updating Choice List + Current Power Plan State"""
@@ -640,7 +636,7 @@ def handleSettings(settings, on_connect=False):
         schedule.every(5).seconds.do(current_vd)
         
     """Scheduling Loop to Get Default Input and Output Devices"""
-    schedule.every(3).minutes.do(get_default_input_output)
+    schedule.every(20).seconds.do(get_default_input_output)
 
 
 
@@ -703,7 +699,8 @@ def Actions(data):
             pass
     if data['actionId'] == 'KillerBOSS.TP.Plugins.ChangeAudioOutput' and data['data'][0]['value'] != "Pick One": 
         print('powershell is running')
-        AudioDeviceCmdlets(f"(Get-AudioDevice -list | Where-Object Name -like (\'{data['data'][1]['value']}') | Set-AudioDevice).Name", output=False)
+        AudioDeviceCmdlets(f"(Get-AudioDevice -list | Where-Object Name -like (\'{data['data'][1]['value']}\') | Set-AudioDevice).Name", output=False)
+        get_default_input_output()
     if data['actionId'] == "KillerBOSS.TP.Plugins.AdvanceMouse.StopMouseUpdate":
         global updateXY
         if data['data'][0]['value'] == "OFF":
