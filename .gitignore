@@ -1,2 +1,6 @@
-
+*.tpp
 *.pyc
+main.spec
+./build
+./dist
+./temp
