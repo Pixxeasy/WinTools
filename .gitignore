@@ -1,6 +1,6 @@
 *.tpp
 *.pyc
 main.spec
-./build
-./dist
-./temp
+./build/*
+./dist/*
+./temp/*
